@@ -1,67 +1,75 @@
 package ws
 
 import (
-	"net"
-	"log"
-	"net/http"
 	"github.com/gorilla/websocket"
 	"github.com/scgywx/foog"
+	"log"
+	"net"
+	"net/http"
 )
 
-type WebSocketServer struct{
-	handle func(foog.IConn)
-	msgType int
-	upgrader websocket.Upgrader
+//websocker处理
+type WebSocketServer struct {
+	handle   func(foog.IConn)   //处理函数
+	msgType  int                //消息类型
+	upgrader websocket.Upgrader //更新
 }
 
-type WebSocketConn struct{
-	conn *websocket.Conn
-	msgType int
+//websocket连接
+type WebSocketConn struct {
+	conn       *websocket.Conn
+	msgType    int
 	remoteAddr string
 }
 
-func NewServer()*WebSocketServer{
+//新建一个server
+func NewServer() *WebSocketServer {
 	s := &WebSocketServer{}
-	s.upgrader.CheckOrigin = func(r *http.Request) bool{
+	s.upgrader.CheckOrigin = func(r *http.Request) bool {
 		return true
 	}
 	return s
 }
 
-func (this *WebSocketServer)SetCheckOriginFunc(fn func(r *http.Request) bool){
+//设置变量
+func (this *WebSocketServer) SetCheckOriginFunc(fn func(r *http.Request) bool) {
 	this.upgrader.CheckOrigin = fn
 }
 
-func (this *WebSocketServer)SetMessageType(msgType int){
+//设置变量
+func (this *WebSocketServer) SetMessageType(msgType int) {
 	this.msgType = msgType
 }
 
-func (this *WebSocketServer)Run(ls net.Listener, fn func(foog.IConn)){
+//运行websocket服务
+func (this *WebSocketServer) Run(ls net.Listener, fn func(foog.IConn)) {
 	this.handle = fn
 	http.HandleFunc("/", this.handleConnection)
 	http.Serve(ls, nil)
 }
 
-func (this *WebSocketServer)handleConnection(w http.ResponseWriter, r *http.Request) {
+func (this *WebSocketServer) handleConnection(w http.ResponseWriter, r *http.Request) {
+	//处理websocket的更新
 	c, err := this.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Print("websocket upgrade:", err)
 		return
 	}
-	
+	//把更新交给WebSocketConn去处理
 	this.handle(&WebSocketConn{
-		conn: c,
-		msgType: this.msgType,
+		conn:       c,
+		msgType:    this.msgType,
 		remoteAddr: r.RemoteAddr,
 	})
 }
 
-func (this *WebSocketConn)ReadMessage()([]byte, error){
+//读取消息：类型+消息+err
+func (this *WebSocketConn) ReadMessage() ([]byte, error) {
 	mt, msg, err := this.conn.ReadMessage()
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
-	
+
 	if this.msgType == 0 {
 		this.msgType = mt
 	}
@@ -69,14 +77,17 @@ func (this *WebSocketConn)ReadMessage()([]byte, error){
 	return msg, nil
 }
 
-func (this *WebSocketConn)WriteMessage(msg []byte) error{
+//写入消息类型+消息
+func (this *WebSocketConn) WriteMessage(msg []byte) error {
 	return this.conn.WriteMessage(this.msgType, msg)
 }
 
-func (this *WebSocketConn)Close(){
+//关闭
+func (this *WebSocketConn) Close() {
 	this.conn.Close()
 }
 
-func (this *WebSocketConn)GetRemoteAddr()string{
+//返回remoteAddr
+func (this *WebSocketConn) GetRemoteAddr() string {
 	return this.remoteAddr
 }
