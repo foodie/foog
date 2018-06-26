@@ -1,6 +1,9 @@
 package foog
 
-type ISerializer interface{
-	Encode(interface{})([]byte, error)
-	Decode([]byte, interface{})(error)
+//序列化
+type ISerializer interface {
+	//编码
+	Encode(interface{}) ([]byte, error)
+	//解码
+	Decode([]byte, interface{}) error
 }

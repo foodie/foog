@@ -4,16 +4,20 @@ import (
 	"encoding/json"
 )
 
+//定义空类型
 type JsonSerializer struct{}
 
-func New()*JsonSerializer{
+//新建一个类型
+func New() *JsonSerializer {
 	return &JsonSerializer{}
 }
 
-func (this *JsonSerializer)Encode(v interface{})([]byte, error){
+//json encode
+func (this *JsonSerializer) Encode(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
 
-func (this *JsonSerializer)Decode(data []byte, v interface{}) error{
+//json decode
+func (this *JsonSerializer) Decode(data []byte, v interface{}) error {
 	return json.Unmarshal(data, v)
 }
