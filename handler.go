@@ -90,38 +90,49 @@ func (this *handlerManager) register(obj IObject) {
 }
 
 //分发数据
-func (this *handlerManager) dispatch(name string, sess *Session, data interface{}) {
+func (this *handlerManager) dispatch(name string,
+	sess *Session,
+	data interface{}) {
+	//获取handlerEntity
 	h, ok := this.handlers[strings.ToLower(name)]
 	if !ok {
 		log.Println("not found handle by", name)
 		return
 	}
 
+	//定义后续的处理函数
 	defer func() {
 		if err := recover(); err != nil {
 			log.Println("dispatch error", name, err)
 		}
 	}()
 
+	//是否序列化后
 	var serialized bool
 	var argv reflect.Value
+
+	//不是原生的，序列化不为空
 	if !h.argIsRaw && sess.serializer != nil {
+		//获取byte类型
 		if bytes, ok := data.([]byte); ok {
+			//获取参数的值
 			argv = reflect.New(h.argType.Elem())
+			//解压参数类型的值
 			err := sess.serializer.Decode(bytes, argv.Interface())
 			if err != nil {
 				log.Println("deserialize error", err.Error())
 				return
 			}
-
+			//可序列化
 			serialized = true
 		}
 	}
-
+	//不可序列化，直接返回值
 	if !serialized {
 		argv = reflect.ValueOf(data)
 	}
-
+	//参数返回reflect的值
 	args := []reflect.Value{reflect.ValueOf(sess), argv}
+	//方法调用参数
 	h.method.Call(args)
 }
