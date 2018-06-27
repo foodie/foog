@@ -154,3 +154,16 @@ type ISerializer interface{
 	Decode([]byte, interface{})(error)
 }
 ```
+
+foog还需要完善的地方
+	1 提取出协议抽取的地方。
+	2 group的部分的完善
+	3 支持tcp的心跳检测和长连接
+	4 支持udp编程 
+
+
+
+
+
+
+

@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
-	"github.com/scgywx/foog"
+	"foog"
 	"log"
 	"net"
 )
@@ -35,6 +35,7 @@ func (this *TcpServer) SetHeadSize(n int) {
 	this.headSize = n
 }
 
+//
 //实现了Server方法
 func (this *TcpServer) Run(ls net.Listener, fn func(foog.IConn)) {
 	if this.headSize != 2 && this.headSize != 4 {
@@ -48,7 +49,7 @@ func (this *TcpServer) Run(ls net.Listener, fn func(foog.IConn)) {
 			log.Println("Accept failed", err)
 			break
 		}
-		//
+		//处理连接
 		go fn(&TcpConn{
 			server: this,                         //当前server
 			conn:   c,                            //连接
@@ -61,6 +62,9 @@ func (this *TcpServer) Run(ls net.Listener, fn func(foog.IConn)) {
 	}
 }
 
+/**
+读取消息，未做粘包处理
+**/
 func (this *TcpConn) ReadMessage() ([]byte, error) {
 	//获取长度数据
 	headSize := this.server.headSize
@@ -78,7 +82,7 @@ func (this *TcpConn) ReadMessage() ([]byte, error) {
 	} else {
 		bodySize = int(binary.BigEndian.Uint32(head) & 0x7fffffff)
 	}
-
+	log.Printf("bodySize=%d", bodySize)
 	off := 0
 	//创建数据的长度
 	bytes := make([]byte, bodySize)

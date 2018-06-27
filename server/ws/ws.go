@@ -1,8 +1,8 @@
 package ws
 
 import (
+	"foog"
 	"github.com/gorilla/websocket"
-	"github.com/scgywx/foog"
 	"log"
 	"net"
 	"net/http"
@@ -17,21 +17,22 @@ type WebSocketServer struct {
 
 //websocket连接
 type WebSocketConn struct {
-	conn       *websocket.Conn
-	msgType    int
-	remoteAddr string
+	conn       *websocket.Conn // websocke的连接
+	msgType    int             //消息类型
+	remoteAddr string          //消息地址
 }
 
-//新建一个server
+//新建一个websocket的server
 func NewServer() *WebSocketServer {
 	s := &WebSocketServer{}
+	//检测origin
 	s.upgrader.CheckOrigin = func(r *http.Request) bool {
 		return true
 	}
 	return s
 }
 
-//设置变量
+//upgrader.CheckOrigin的函数，处理http请求
 func (this *WebSocketServer) SetCheckOriginFunc(fn func(r *http.Request) bool) {
 	this.upgrader.CheckOrigin = fn
 }
@@ -42,13 +43,19 @@ func (this *WebSocketServer) SetMessageType(msgType int) {
 }
 
 //运行websocket服务
-func (this *WebSocketServer) Run(ls net.Listener, fn func(foog.IConn)) {
+//设置处理器,监听一个端口
+func (this *WebSocketServer) Run(
+	ls net.Listener, fn func(foog.IConn)) {
 	this.handle = fn
+	//定义处理连接的
 	http.HandleFunc("/", this.handleConnection)
 	http.Serve(ls, nil)
 }
 
-func (this *WebSocketServer) handleConnection(w http.ResponseWriter, r *http.Request) {
+//处理连接
+func (this *WebSocketServer) handleConnection(
+	w http.ResponseWriter,
+	r *http.Request) {
 	//处理websocket的更新
 	c, err := this.upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -57,9 +64,9 @@ func (this *WebSocketServer) handleConnection(w http.ResponseWriter, r *http.Req
 	}
 	//把更新交给WebSocketConn去处理
 	this.handle(&WebSocketConn{
-		conn:       c,
-		msgType:    this.msgType,
-		remoteAddr: r.RemoteAddr,
+		conn:       c,            //连接
+		msgType:    this.msgType, // 类型
+		remoteAddr: r.RemoteAddr, //地址
 	})
 }
 
